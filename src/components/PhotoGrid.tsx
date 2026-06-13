@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { PhotoEntry } from '../types';
-import { compressPhoto } from '../lib/photoStorage';
+import { compressPhoto, isLikelyImage } from '../lib/photoStorage';
 import { Camera, Image, Trash2, Loader2, Maximize2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Props {
@@ -20,16 +20,25 @@ export default function PhotoGrid({ photos, onPhotosChange, toast }: Props) {
     setProcessing(true);
     try {
       const newPhotos: PhotoEntry[] = [];
+      let failed = 0;
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        if (!file.type.startsWith('image/')) continue;
-        const entry = await compressPhoto(file);
-        newPhotos.push(entry);
+        if (!isLikelyImage(file)) continue;
+        try {
+          const entry = await compressPhoto(file);
+          newPhotos.push(entry);
+        } catch {
+          failed++;
+        }
       }
       if (newPhotos.length) {
         onPhotosChange([...photos, ...newPhotos]);
         toast(`${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} added`, 'success');
-      } else {
+      }
+      if (failed) {
+        toast(`${failed} photo${failed > 1 ? 's' : ''} couldn't be processed`, 'error');
+      }
+      if (!newPhotos.length && !failed) {
         toast('No image found', 'error');
       }
     } catch {
@@ -85,7 +94,7 @@ export default function PhotoGrid({ photos, onPhotosChange, toast }: Props) {
 
         {/* Camera input: single-shot capture. `multiple` is intentionally omitted —
             combined with `capture`, it causes many mobile browsers (esp. iOS Safari)
-            to silently fall back to the gallery picker or do nothing. */}
+            to silently ignore the camera launch or fall back to the gallery picker. */}
         <input
           ref={cameraRef}
           type="file"

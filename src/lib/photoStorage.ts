@@ -71,51 +71,85 @@ export async function deleteStopPhotos(stopId: string): Promise<void> {
   await savePhotos(stopId, []);
 }
 
+/**
+ * Returns true if a File is likely an image — checks MIME type first,
+ * but falls back to file extension since iOS Safari sometimes hands
+ * back an empty/octet-stream MIME type for camera captures (HEIC/HEIF).
+ */
+export function isLikelyImage(file: File): boolean {
+  if (file.type.startsWith('image/')) return true;
+  if (file.type) return false; // explicit non-image type (e.g. video/*)
+  return /\.(jpe?g|png|gif|webp|heic|heif|bmp|avif)$/i.test(file.name);
+}
+
+/**
+ * Decodes a source (data URL or Blob) into an HTMLImageElement or ImageBitmap-backed
+ * canvas-drawable source. Tries createImageBitmap first (handles HEIC on Safari/iOS),
+ * falls back to <img> + data URL.
+ */
+async function decodeToDrawable(file: File): Promise<{ source: ImageBitmap | HTMLImageElement; width: number; height: number; revoke?: () => void }> {
+  // Try createImageBitmap first — on iOS Safari this can decode HEIC camera captures
+  // that <img src> cannot.
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(file);
+      return { source: bitmap, width: bitmap.width, height: bitmap.height };
+    } catch {
+      // fall through to <img> decoding
+    }
+  }
+
+  const dataUrl = await new Promise<string>((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result as string);
+    reader.onerror = () => rej(reader.error);
+    reader.readAsDataURL(file);
+  });
+
+  const img = await new Promise<HTMLImageElement>((res, rej) => {
+    const image = new Image();
+    image.onload = () => res(image);
+    image.onerror = () => rej(new Error('Image decode failed'));
+    image.src = dataUrl;
+  });
+
+  return { source: img, width: img.naturalWidth || img.width, height: img.naturalHeight || img.height };
+}
+
+function drawToCanvas(source: ImageBitmap | HTMLImageElement, srcW: number, srcH: number, maxDim: number, quality: number): string {
+  const ratio = Math.min(1, maxDim / Math.max(srcW, srcH));
+  const w = Math.max(1, Math.round(srcW * ratio));
+  const h = Math.max(1, Math.round(srcH * ratio));
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas context unavailable');
+  ctx.drawImage(source, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', quality);
+}
+
 export async function compressPhoto(file: File): Promise<PhotoEntry> {
   const MAX_DIM = 1200;
   const THUMB_DIM = 200;
   const QUALITY = 0.78;
 
-  const readFile = (): Promise<string> =>
-    new Promise((res, rej) => {
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result as string);
-      reader.onerror = () => rej(reader.error);
-      reader.readAsDataURL(file);
-    });
+  const { source, width, height } = await decodeToDrawable(file);
 
-  const original = await readFile();
-
-  const compress = (src: string, maxDim: number, quality: number): Promise<string> =>
-    new Promise((res) => {
-      const img = new Image();
-      img.onload = () => {
-        const ratio = Math.min(1, maxDim / Math.max(img.width, img.height));
-        const w = Math.round(img.width * ratio);
-        const h = Math.round(img.height * ratio);
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) { res(src); return; }
-        ctx.drawImage(img, 0, 0, w, h);
-        const result = canvas.toDataURL('image/jpeg', quality);
-        res(result.length > 100 ? result : src);
-      };
-      img.onerror = () => res(src);
-      img.src = src;
-    });
-
-  const [dataUrl, thumb] = await Promise.all([
-    compress(original, MAX_DIM, QUALITY),
-    compress(original, THUMB_DIM, 0.65),
-  ]);
+  let dataUrl: string;
+  let thumb: string;
+  try {
+    dataUrl = drawToCanvas(source, width, height, MAX_DIM, QUALITY);
+    thumb = drawToCanvas(source, width, height, THUMB_DIM, 0.65);
+  } finally {
+    if ('close' in source && typeof source.close === 'function') source.close();
+  }
 
   return {
     id: `photo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     dataUrl,
     thumb,
-    name: file.name,
+    name: file.name || `photo-${Date.now()}.jpg`,
     size: file.size,
     capturedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     ts: Date.now(),
