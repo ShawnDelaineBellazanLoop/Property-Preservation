@@ -2,19 +2,25 @@
 <img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
 </div>
 
-# Run and deploy your AI Studio app
+# Property Walkthrough Checklist — Tooensure LLC
 
-This contains everything you need to run your app locally.
+A field-ready property preservation inspection app for tracking walkthrough stops, checklist items, photos, and generating reports.
 
-View your app in AI Studio: https://ai.studio/apps/8b7bf1f7-956f-40eb-91f4-03fde508d9e6
+## 🌐 Live Site
+
+**[https://shawndelainebellazanloop.github.io/Property-Preservation/](https://shawndelainebellazanloop.github.io/Property-Preservation/)**
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
+**Prerequisites:** Node.js
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. (Optional) Set `GEMINI_API_KEY` in `.env.local` for AI features
 3. Run the app:
    `npm run dev`
+4. Open: `http://localhost:3000`
+
+## Deploy
+
+Pushes to `main` automatically deploy to GitHub Pages via the Actions workflow.
