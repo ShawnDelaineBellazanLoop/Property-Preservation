@@ -39,13 +39,13 @@ export default function PhotoGrid({ photos, onPhotosChange, toast }: Props) {
     }
   };
 
-  const deletePhoto = (id: string) => {
-    onPhotosChange(photos.filter(p => p.id !== id));
-    if (lightbox !== null) {
-      const newIdx = photos.findIndex(p => p.id === id);
-      if (newIdx !== -1) {
-        setLightbox(prev => prev !== null && prev >= photos.length - 1 ? null : prev);
-      }
+  const deletePhoto = (id: string, closeLightbox = false) => {
+    const remaining = photos.filter(p => p.id !== id);
+    onPhotosChange(remaining);
+    if (closeLightbox || remaining.length === 0) {
+      setLightbox(null);
+    } else if (lightbox !== null && lightbox >= remaining.length) {
+      setLightbox(remaining.length - 1);
     }
   };
 
@@ -163,7 +163,7 @@ export default function PhotoGrid({ photos, onPhotosChange, toast }: Props) {
               <span className="text-xs text-white/60 font-mono">{lightbox + 1} / {photos.length}</span>
               <span className="text-white/30">·</span>
               <button
-                onClick={() => { deletePhoto(photos[lightbox].id); setLightbox(null); }}
+                onClick={() => deletePhoto(photos[lightbox].id, true)}
                 className="btn btn-danger text-xs py-1"
               >
                 <Trash2 className="w-3 h-3" /> Delete

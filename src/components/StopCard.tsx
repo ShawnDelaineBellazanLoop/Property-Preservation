@@ -34,11 +34,12 @@ export default function StopCard({ stop, index, onUpdate, onDelete, toast }: Pro
   const toggleItem = (id: string) => {
     const checklist = stop.checklist.map(c => c.id === id ? { ...c, checked: !c.checked } : c);
     const allDone = checklist.every(c => c.checked);
+    const anyDone = checklist.some(c => c.checked);
     onUpdate({
       ...stop,
       checklist,
-      status: allDone ? 'complete' : checkedCount > 0 ? 'in-progress' : 'pending',
-      startedAt: !stop.startedAt && checkedCount === 0 ? new Date().toISOString() : stop.startedAt,
+      status: allDone ? 'complete' : anyDone ? 'in-progress' : 'pending',
+      startedAt: !stop.startedAt && anyDone ? new Date().toISOString() : stop.startedAt,
       completedAt: allDone ? new Date().toISOString() : null,
     });
   };

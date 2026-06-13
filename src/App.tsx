@@ -70,7 +70,7 @@ export default function App() {
       setLastSaved(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       setTimeout(() => setSyncState('idle'), 4000);
     }, 600);
-  }, [stops, inspector, photosLoaded]);
+  }, [stops, inspector, photosLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addStop = useCallback((address: string, workOrderId: string) => {
     const newStop: PropertyStop = {
