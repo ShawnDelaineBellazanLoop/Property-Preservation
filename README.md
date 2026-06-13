@@ -1,20 +1,30 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Property Walkthrough — Tooensure LLC
 
-# Run and deploy your AI Studio app
+Field-grade property preservation inspection tool. Mobile-first PWA.
 
-This contains everything you need to run your app locally.
+**Live:** https://shawndelainebellazanloop.github.io/Property-Preservation/
 
-View your app in AI Studio: https://ai.studio/apps/8b7bf1f7-956f-40eb-91f4-03fde508d9e6
+## Features
 
-## Run Locally
+- 📋 20-item grouped checklist (Exterior / Interior / Compliance)
+- 📷 Camera + Gallery photo capture with IndexedDB persistence
+- 🗒️ Timestamped field notes
+- 📤 Export: Text report (.txt) + JSON backup (.json)
+- 🔗 Share walkthrough via URL (checklist + notes, no photos)
+- 🧭 Google Maps + Apple Maps navigation per stop
+- ⚡ Offline-capable, zero server dependencies
 
-**Prerequisites:**  Node.js
+## Stack
 
+React 18 · TypeScript · Vite · Tailwind CSS v3 · IndexedDB
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Local dev
+
+```bash
+npm install
+npm run dev
+```
+
+## Deploy
+
+Push to `main` → GitHub Actions builds and deploys automatically.

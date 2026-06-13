@@ -1,38 +1,44 @@
-/**
- * Types & Interfaces for Tooensure Property Walkthrough
- * Designed for Field Agents and Property Preservation Walkthroughs
- */
-
-export interface WalkthroughItem {
+export interface ChecklistItem {
   id: string;
   label: string;
   checked: boolean;
-  category: 'occupancy' | 'exterior' | 'vacancy';
+  category: string;
 }
 
-export interface SelectedPhoto {
+export interface FieldNote {
+  id: string;
+  text: string;
+  timestamp: string;
+  ts: number;
+}
+
+export interface PhotoEntry {
   id: string;
   dataUrl: string;
-  timestamp: string;
+  thumb: string;
+  name: string;
+  size: number;
+  capturedAt: string;
+  ts: number;
 }
 
 export interface PropertyStop {
   id: string;
   address: string;
-  cityStateZip: string;
-  priority: 'high' | 'normal' | 'low';
-  tag: string; // "Urgent", "Estate", "Standard", "REO"
-  notes: string;
-  photos: SelectedPhoto[];
-  items: WalkthroughItem[];
-  completedAt?: string;
-  delinquentAmount?: number; // For delinquency/revenue details
-  inspectorName?: string;
+  workOrderId: string;
+  status: 'pending' | 'in-progress' | 'complete';
+  checklist: ChecklistItem[];
+  notes: FieldNote[];
+  photos: PhotoEntry[];
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
 }
 
-export interface WalkthroughReport {
-  id: string;
-  date: string;
-  inspector: string;
+export type SyncState = 'idle' | 'saving' | 'saved';
+
+export interface WalkthroughState {
   stops: PropertyStop[];
+  inspector: string;
+  version: string;
 }
