@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { PropertyStop } from '../types';
-import { downloadTextReport, downloadJsonExport, encodeShareState } from '../lib/exportUtils';
+import { downloadTextReport, downloadHtmlReport, downloadJsonExport, encodeShareState } from '../lib/exportUtils';
 import {
   Plus, Download, Share2, RotateCcw, User,
-  GitBranch, FileText, FileJson, ChevronDown, Zap, Globe,
+  GitBranch, FileText, FileJson, FileCode, ChevronDown, Zap, Globe, Camera,
 } from 'lucide-react';
 
 interface Props {
@@ -19,6 +19,7 @@ interface Props {
 
 export default function Header({ stops, inspector, setInspector, syncState, lastSaved, onAddStop, onReset, toast }: Props) {
   const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,6 +34,19 @@ export default function Header({ stops, inspector, setInspector, syncState, last
     downloadTextReport(stops, inspector);
     setExportOpen(false);
     toast('Report downloaded', 'success', '📄');
+  };
+
+  const handleHtml = async () => {
+    setExporting(true);
+    try {
+      await downloadHtmlReport(stops, inspector);
+      toast('HTML report with photos downloaded', 'success', '🖼️');
+    } catch {
+      toast('HTML export failed', 'error');
+    } finally {
+      setExporting(false);
+      setExportOpen(false);
+    }
   };
 
   const handleJson = () => {
@@ -154,16 +168,30 @@ export default function Header({ stops, inspector, setInspector, syncState, last
 
           {/* Export dropdown */}
           <div ref={exportRef} className="relative">
-            <button onClick={() => setExportOpen(v => !v)} className="btn btn-ghost text-xs">
+            <button onClick={() => setExportOpen(v => !v)} className="btn btn-ghost text-xs" disabled={exporting}>
               <Download className="w-3.5 h-3.5" style={{ color: '#60a5fa' }} />
               Export
               <ChevronDown className={`w-3 h-3 transition-transform ${exportOpen ? 'rotate-180' : ''}`} />
             </button>
             {exportOpen && (
               <div
-                className="absolute right-0 mt-1.5 w-52 rounded-xl overflow-hidden shadow-2xl animate-slide-down"
+                className="absolute right-0 mt-1.5 w-56 rounded-xl overflow-hidden shadow-2xl animate-slide-down"
                 style={{ background: '#14141a', border: '1px solid var(--border)', zIndex: 100 }}
               >
+                <button onClick={handleHtml} disabled={exporting} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors cursor-pointer border-b disabled:opacity-50" style={{ borderColor: 'var(--border)' }}>
+                  <FileCode className="w-4 h-4 shrink-0" style={{ color: 'var(--green)' }} />
+                  <div className="flex-1">
+                    <div className="text-xs font-semibold text-white flex items-center gap-1.5">
+                      HTML Report
+                      {totalPhotos > 0 && (
+                        <span className="font-mono text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-1" style={{ background: 'var(--green-dim)', color: 'var(--green)', border: '1px solid var(--green-border)' }}>
+                          <Camera className="w-2.5 h-2.5" /> {totalPhotos}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>With embedded photos — printable (.html)</div>
+                  </div>
+                </button>
                 <button onClick={handleTxt} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors cursor-pointer border-b" style={{ borderColor: 'var(--border)' }}>
                   <FileText className="w-4 h-4 shrink-0" style={{ color: '#60a5fa' }} />
                   <div>
@@ -174,8 +202,8 @@ export default function Header({ stops, inspector, setInspector, syncState, last
                 <button onClick={handleJson} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors cursor-pointer">
                   <FileJson className="w-4 h-4 shrink-0" style={{ color: '#f59e0b' }} />
                   <div>
-                    <div className="text-xs font-semibold text-white">JSON Export</div>
-                    <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Structured data backup (.json)</div>
+                    <div className="text-xs font-semibold text-white">JSON Backup</div>
+                    <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Structured data + photos (.json)</div>
                   </div>
                 </button>
               </div>
